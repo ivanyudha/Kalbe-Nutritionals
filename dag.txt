@@ -1,0 +1,50 @@
+08561096440
+
+
+
+import pandas as pd
+from sqlalchemy import create_engine
+from datetime import datetime
+from airflow import DAG
+from airflow.operators.python_operator import PythonOperator
+
+def extract():
+
+    master_df = pd.read_csv('https://github.com/mmirzafahmi/python_ds_project/raw/master/data/train.csv.zip', compression='zip')
+    master_df.to_csv('master_data.csv', index=False)
+
+def transform():
+    # Transformasikan data yang diekstrak
+    df = pd.read_csv('master_data.csv')
+    df.dropna(inplace=True)
+def load():
+    # Muat data yang telah diubah ke tujuan
+
+    engine = create_engine('postgresql')
+
+    df = pd.read_csv('master_data_clean.csv')
+    df.to_sql(engine, table='master_data')
+
+dag = DAG(
+    'rakamin_task',
+    start_date=datetime(2023, 5, 1),
+    schedule_interval='@daily'
+)
+
+extract_task = PythonOperator(
+    task_id='extract_task',
+    python_callable=extract,
+    dag=dag
+)
+
+transform_task = PythonOperator(
+    task_id='transform_task',
+    python_callable=transform,
+    dag=dag
+load_task = PythonOperator(
+    task_id='load_task',
+    python_callable=load,
+    dag=dag
+)
+
+extract_task >> transform_task >> load_task
