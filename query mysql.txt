@@ -1,0 +1,15 @@
+create table masters as (
+with tmp as (
+select o.date, o.Quantity, o.CustomerID, subq.*
+from orders as o
+join 
+(
+select pc.CategoryName, p.ProdName, p.Price, p.ProdNumber
+from products as p join productcategory as pc
+on pc.CategoryID = p.Category
+) subq on o.ProdNumber = subq.ProdNumber
+)
+select tmp.*, c.CustomerEmail, c.CustomerCity, (tmp.Price * tmp.Quantity) AS total_sales
+from tmp
+join customers as c on c.CustomerID = tmp.CustomerID
+)
